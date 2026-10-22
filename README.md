@@ -152,9 +152,3 @@ Not: Train'de güçlü augmentation olduğundan train loss'un val loss'tan yüks
 | `CUDA out of memory` | Batch size'ı 64'ten 32'ye indir |
 | Bulunamayan görsel sayısı ≠ 0 | CSV yol sütunu ile `images/` yapısını kontrol et |
 | Colab oturumu kopar | Veri/cache yeniden açılır, checkpoint Drive'dan okunur |
-
----
-
-## 7. Sıradaki adım
-
-Colab'da Hücre 6 → benchmark → Hücre 7 (hızlı baseline) → Hücre 8 → Hücre 9 çalıştırılır. Çıkan **epoch satırları, val macro-F1 ve `classification_report`** üzerinden Gün 2'de hangi dengesizlik yönteminin deneneceğine karar verilir.
