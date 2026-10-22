@@ -1,0 +1,25 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+data
+
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+
+# veri ve cache
+data/
+outputs/cache_*.npy
+*.npy
+*.zip
+
+# ara checkpoint'ler (final modeli elle ekleriz)
+outputs/*.pt
+!outputs/final_model.pt
