@@ -187,6 +187,43 @@ def cmd_api(args) -> int:
     return 0
 
 
+def cmd_streamlit(args) -> int:
+    import subprocess
+    import sys
+    project_root = Path(__file__).parent.parent.parent
+    streamlit_app = project_root / "src" / "deepweeds" / "streamlit_app.py"
+
+    if not streamlit_app.exists():
+        print(f"Hata: Streamlit uygulaması bulunamadı: {streamlit_app}")
+        return 1
+
+    cmd = [
+        sys.executable,
+        "-m", "streamlit", "run",
+        str(streamlit_app),
+        "--server.port", str(args.port),
+        "--server.address", args.host,
+    ]
+
+    if args.model:
+        cmd.extend(["--", "--model", args.model])
+
+    print(f"🚀 DeepWeeds Streamlit başlatılıyor...")
+    print(f"   Adres: http://{args.host}:{args.port}")
+    if args.model:
+        print(f"   Model: {args.model}")
+    print()
+
+    try:
+        subprocess.run(cmd, cwd=project_root, check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Hata: Streamlit başlatılamadı (kod: {e.returncode})")
+        return e.returncode
+    except KeyboardInterrupt:
+        print("\n👋 Streamlit kapatıldı.")
+    return 0
+
+
 # ---------------------------------------------------------------------------
 # CLI tanımı
 # ---------------------------------------------------------------------------
@@ -246,6 +283,15 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--port", type=int, default=8000)
     p.add_argument("--device", default=None, help="cuda / cpu (varsayılan: otomatik)")
     p.set_defaults(func=cmd_api)
+
+    # --- streamlit ---
+    p = sub.add_parser("streamlit", help="Streamlit arayüzünü başlat",
+                        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    p.add_argument("--model", default=None, help="weights/best.pt yolu (varsayılan: runs/exp-effb3-sqrt/weights/best.pt)")
+    p.add_argument("--port", type=int, default=8501, help="Streamlit port (varsayılan: 8501)")
+    p.add_argument("--host", default="localhost", help="Streamlit host (varsayılan: localhost)")
+    p.add_argument("--browser", action="store_true", help="Tarayıcıyı otomatik aç")
+    p.set_defaults(func=cmd_streamlit)
 
     args = parser.parse_args(argv)
     return args.func(args)

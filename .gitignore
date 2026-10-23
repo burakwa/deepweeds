@@ -34,3 +34,5 @@ runs/
 # OS
 .DS_Store
 Thumbs.db
+
+predictions.csv
