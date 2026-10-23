@@ -16,24 +16,72 @@ IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
 
 
-def build_train_transform(img_size: int, use_aug: bool = True) -> T.Compose:
+def build_train_transform(img_size: int, use_aug: bool = True, strong_aug: bool = False) -> T.Compose:
     if not use_aug:
         return build_eval_transform(img_size)
+    if strong_aug:
+        # Güçlü augmentation - az örnekli sınıflar için idealdir
+        return T.Compose([
+            T.RandomResizedCrop(img_size, scale=(0.5, 1.0), ratio=(0.75, 1.33), antialias=True),
+            T.RandomHorizontalFlip(p=0.5),
+            T.RandomVerticalFlip(p=0.2),
+            T.RandomRotation(degrees=15),
+            T.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.3, hue=0.05),
+            T.RandomGrayscale(p=0.02),
+            T.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0)),
+            T.ToTensor(),
+            T.Normalize(IMAGENET_MEAN, IMAGENET_STD),
+            T.RandomErasing(p=0.25, scale=(0.02, 0.2), ratio=(0.3, 3.3)),
+        ])
     return T.Compose([
         T.RandomResizedCrop(img_size, scale=(0.6, 1.0), antialias=True),
         T.RandomHorizontalFlip(),
-        T.ColorJitter(0.2, 0.2, 0.2, 0.02),
+        T.RandomVerticalFlip(p=0.2),
+        T.ColorJitter(0.3, 0.3, 0.3, 0.05),
         T.ToTensor(),
         T.Normalize(IMAGENET_MEAN, IMAGENET_STD),
+        T.RandomErasing(p=0.15, scale=(0.02, 0.15)),
     ])
 
 
 def build_eval_transform(img_size: int) -> T.Compose:
     return T.Compose([
-        T.Resize((img_size, img_size), antialias=True),
+        T.Resize(int(img_size * 1.14), antialias=True),   # biraz büyük resize → center crop
+        T.CenterCrop(img_size),
         T.ToTensor(),
         T.Normalize(IMAGENET_MEAN, IMAGENET_STD),
     ])
+
+
+def build_tta_transforms(img_size: int) -> list[T.Compose]:
+    """Test Time Augmentation için 5 farklı transform döner (orijinal + 4 flip/crop varyant)."""
+    base_resize = int(img_size * 1.14)
+    return [
+        T.Compose([
+            T.Resize(base_resize, antialias=True), T.CenterCrop(img_size),
+            T.ToTensor(), T.Normalize(IMAGENET_MEAN, IMAGENET_STD),
+        ]),
+        T.Compose([
+            T.Resize(base_resize, antialias=True), T.CenterCrop(img_size),
+            T.RandomHorizontalFlip(p=1.0),
+            T.ToTensor(), T.Normalize(IMAGENET_MEAN, IMAGENET_STD),
+        ]),
+        T.Compose([
+            T.Resize(base_resize, antialias=True), T.CenterCrop(img_size),
+            T.RandomVerticalFlip(p=1.0),
+            T.ToTensor(), T.Normalize(IMAGENET_MEAN, IMAGENET_STD),
+        ]),
+        T.Compose([
+            T.Resize(int(img_size * 1.05), antialias=True), T.FiveCrop(img_size),
+            T.Lambda(lambda crops: crops[0]),   # sol-üst köşe
+            T.ToTensor(), T.Normalize(IMAGENET_MEAN, IMAGENET_STD),
+        ]),
+        T.Compose([
+            T.Resize(int(img_size * 1.05), antialias=True), T.FiveCrop(img_size),
+            T.Lambda(lambda crops: crops[4]),   # merkez
+            T.ToTensor(), T.Normalize(IMAGENET_MEAN, IMAGENET_STD),
+        ]),
+    ]
 
 
 class DeepWeedsDataset(Dataset):
@@ -142,8 +190,8 @@ class DeepWeedsData:
     def sample_weights(self) -> np.ndarray:
         return 1.0 / self.class_counts.values[self.train_df["_label"].values]
 
-    def train_loader(self, balance: str = "none") -> DataLoader:
-        ds = DeepWeedsDataset(self.train_df, build_train_transform(self.cfg.img_size, self.cfg.use_aug))
+    def train_loader(self, balance: str = "none", strong_aug: bool = False) -> DataLoader:
+        ds = DeepWeedsDataset(self.train_df, build_train_transform(self.cfg.img_size, self.cfg.use_aug, strong_aug=strong_aug))
         if balance == "balanced_sampler":
             sampler = WeightedRandomSampler(
                 torch.tensor(self.sample_weights, dtype=torch.double),

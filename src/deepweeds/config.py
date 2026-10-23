@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, is_dataclass
 from pathlib import Path
 from typing import Any, Literal
 
@@ -16,18 +16,18 @@ BalanceStrategy = Literal["none", "weighted_loss", "balanced_sampler"]
 @dataclass(slots=True)
 class DataConfig:
     data_dir: Path = Path("data")
-    image_dir: Path | None = None      
-    image_col: str | None = None       
-    label_col: str | None = None
+    image_dir: Path | None = None      # görüntülerin ayrı bir klasörde olduğu durumlar için
+    image_col: str | None = None       # CSV'deki görüntü yolu kolonu
+    label_col: str | None = None       # CSV'deki etiket kolonu
     img_size: int = 224
-    batch_size: int = 32               
+    batch_size: int = 32
     num_workers: int = 4
     use_aug: bool = True
 
 
 @dataclass(slots=True)
 class ModelConfig:
-    name: str = "resnet50"             
+    name: str = "resnet50"
     num_classes: int = NUM_CLASSES
     pretrained: bool = True
 
@@ -48,14 +48,16 @@ class TrainConfig:
 
 
 def jsonable(obj: Any) -> Any:
-    """Path/np tiplerini JSON-uyumlu hale getirir (checkpoint'a gömmeden önce şart)."""
+    """Path/np/dataclass tiplerini JSON-uyumlu hale getirir (checkpoint'a gömmeden önce şart)."""
+    if is_dataclass(obj) and not isinstance(obj, type):
+        obj = asdict(obj)                      # dataclass → dict; sonra dict dalına düşer
     if isinstance(obj, dict):
         return {str(k): jsonable(v) for k, v in obj.items()}
     if isinstance(obj, (list, tuple)):
         return [jsonable(v) for v in obj]
     if isinstance(obj, Path):
         return str(obj)
-    if isinstance(obj, str):  # str alt sınıfları (ör. TorchVersion) düz metne iner
+    if isinstance(obj, str):                   # str alt sınıfları (ör. TorchVersion) düz metne iner
         return str(obj)
     if obj is None or isinstance(obj, (int, float, bool)):
         return obj

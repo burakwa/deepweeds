@@ -1,29 +1,36 @@
 # Python-generated files
 __pycache__/
-*.py[oc]
+*.py[cod]
+*$py.class
 build/
 dist/
 wheels/
 *.egg-info
 
 # Virtual environments
-.venv
-data
-
 .venv/
-__pycache__/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter
 .ipynb_checkpoints/
 
-# veri ve cache
+# Data and cache (large files, regenerated)
 data/
 outputs/cache_*.npy
 *.npy
 *.zip
 
-# ara checkpoint'ler (final modeli elle ekleriz)
+# Checkpoints (final model should be added manually)
 outputs/*.pt
 !outputs/final_model.pt
 
 runs/
 
-outputs/
+# OS
+.DS_Store
+Thumbs.db

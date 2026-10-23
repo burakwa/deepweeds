@@ -1,10 +1,18 @@
 from __future__ import annotations
 
+import timm
 import torch.nn as nn
 
 from deepweeds.config import ModelConfig
 
-SUGGESTED_MODELS = ("resnet50", "resnet34", "convnext_tiny", "mobilenetv3_large_100")
+SUGGESTED_MODELS = (
+    "resnet50",
+    "resnet34",
+    "convnext_tiny",
+    "mobilenetv3_large_100",
+    "efficientnet_b0",
+    "vit_small_patch16_224",
+)
 
 
 def build_model(cfg: ModelConfig) -> nn.Module:
@@ -13,8 +21,6 @@ def build_model(cfg: ModelConfig) -> nn.Module:
     return timm.create_model(cfg.name, pretrained=cfg.pretrained, num_classes=cfg.num_classes)
 
 
-import timm  
-
-
 def count_parameters(model: nn.Module) -> int:
+    """Eğitilebilir parametre sayısını döner."""
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
