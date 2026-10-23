@@ -1,3 +1,4 @@
+"""Raporlama çıktıları: grafikler, metrics.json, classification report."""
 from __future__ import annotations
 
 from datetime import datetime
@@ -16,6 +17,14 @@ from deepweeds.config import save_json
 from deepweeds.metrics import MetricsResult
 
 
+def _save_fig(fig: plt.Figure, path: Path, dpi: int = 150) -> None:
+    """Grafik dosyasını kaydeder; üst klasör yoksa oluşturur."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path, dpi=dpi)
+    plt.close(fig)
+
+
 def save_class_distribution(counts: pd.Series, class_names: list[str], path: Path) -> None:
     fig, ax = plt.subplots(figsize=(8, 4))
     ax.bar(class_names, counts.values, color="seagreen")
@@ -24,7 +33,8 @@ def save_class_distribution(counts: pd.Series, class_names: list[str], path: Pat
     ax.tick_params(axis="x", rotation=45)
     for i, v in enumerate(counts.values):
         ax.text(i, v, str(int(v)), ha="center", va="bottom", fontsize=8)
-    fig.tight_layout(); fig.savefig(path, dpi=150); plt.close(fig)
+    fig.tight_layout()
+    _save_fig(fig, path)
 
 
 def save_training_curves(history: list[dict], path: Path) -> None:
@@ -36,7 +46,8 @@ def save_training_curves(history: list[dict], path: Path) -> None:
     axes[1].plot(df["epoch"], df["val_macro_f1"], label="val macro-F1")
     axes[1].plot(df["epoch"], df["val_accuracy"], label="val accuracy")
     axes[1].set_ylim(0, 1); axes[1].set_title("Başarı"); axes[1].set_xlabel("epoch"); axes[1].legend()
-    fig.tight_layout(); fig.savefig(path, dpi=150); plt.close(fig)
+    fig.tight_layout()
+    _save_fig(fig, path)
 
 
 def save_confusion_matrix(cm: list[list[int]], class_names: list[str], path: Path) -> None:
@@ -44,7 +55,8 @@ def save_confusion_matrix(cm: list[list[int]], class_names: list[str], path: Pat
     sns.heatmap(np.asarray(cm), annot=True, fmt="d", cmap="Blues",
                 xticklabels=class_names, yticklabels=class_names, ax=ax)
     ax.set_xlabel("Tahmin"); ax.set_ylabel("Gerçek"); ax.set_title("Val karışıklık matrisi")
-    fig.tight_layout(); fig.savefig(path, dpi=150); plt.close(fig)
+    fig.tight_layout()
+    _save_fig(fig, path)
 
 
 def save_per_class_f1(per_class: dict[str, dict], path: Path) -> None:
@@ -57,7 +69,8 @@ def save_per_class_f1(per_class: dict[str, dict], path: Path) -> None:
     ax.set_title("Val sınıf bazlı F1")
     for i, (f, s) in enumerate(zip(f1s, sup)):
         ax.text(f + 0.01, i, f"{f:.3f} (n={s})", va="center", fontsize=8)
-    fig.tight_layout(); fig.savefig(path, dpi=150); plt.close(fig)
+    fig.tight_layout()
+    _save_fig(fig, path)
 
 
 def save_misclassified(val_df: pd.DataFrame, y_true: np.ndarray, y_pred: np.ndarray,
@@ -79,7 +92,8 @@ def save_misclassified(val_df: pd.DataFrame, y_true: np.ndarray, y_pred: np.ndar
     for ax in axes[len(wrong):]:
         ax.axis("off")
     fig.suptitle("En güvenilir hatalar (val)")
-    fig.tight_layout(); fig.savefig(path, dpi=140); plt.close(fig)
+    fig.tight_layout()
+    _save_fig(fig, path, dpi=140)
 
 
 def save_all(run_dir: Path, metrics: MetricsResult, history: list[dict], class_names: list[str],

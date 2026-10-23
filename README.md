@@ -152,3 +152,4 @@ Not: Train'de güçlü augmentation olduğundan train loss'un val loss'tan yüks
 | `CUDA out of memory` | Batch size'ı 64'ten 32'ye indir |
 | Bulunamayan görsel sayısı ≠ 0 | CSV yol sütunu ile `images/` yapısını kontrol et |
 | Colab oturumu kopar | Veri/cache yeniden açılır, checkpoint Drive'dan okunur |
+
