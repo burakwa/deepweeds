@@ -23,3 +23,7 @@ outputs/cache_*.npy
 # ara checkpoint'ler (final modeli elle ekleriz)
 outputs/*.pt
 !outputs/final_model.pt
+
+runs/
+
+outputs/
