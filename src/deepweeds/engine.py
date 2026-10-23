@@ -130,7 +130,7 @@ class Trainer:
             "label2id": {str(k): int(v) for k, v in self.data.label2id.items()},
             "config": jsonable({"model": self.model_cfg, "train": self.cfg, "data": self.data.cfg}),
             "epoch": epoch, "val_macro_f1": f1,
-            "torch": torch.__version__, "timm": timm.__version__,
+            "torch": str(torch.__version__), "timm": str(timm.__version__),  # ← düz str!
             "saved_at": datetime.now().isoformat(timespec="seconds"),
         }
         tmp = self.best_path.with_suffix(".tmp")

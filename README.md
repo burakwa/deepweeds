@@ -1,155 +1,95 @@
-# DeepWeeds (T03): Yabani Ot Sınıflandırma
+# 🌱 DeepWeeds T03 — Tarla Fotoğraflarından Yabancı Ot Sınıflandırma
 
-Avustralya'da tarlada çekilmiş 256×256 renkli fotoğraflardan **9 sınıflı** yabani ot tanıma. 5 günlük yarışma projesi. Bu dosya, ne yaptığımızı, neden yaptığımızı ve sıradaki adımları tek yerde toplar.
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.12%2B-blue?style=flat-square&logo=python&logoColor=white" alt="Python Version">
+  <img src="https://img.shields.io/badge/PyTorch-Deep%20Learning-red?style=flat-square&logo=pytorch&logoColor=white" alt="PyTorch">
+  <img src="https://img.shields.io/badge/FastAPI-API%20%26%20Demo-teal?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI">
+  <img src="https://img.shields.io/badge/Package%20Manager-uv-purple?style=flat-square" alt="uv">
+  <img src="https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey?style=flat-square" alt="License">
+</p>
+
+**Takım:** `BM_TAKIMKODU_T03` · **Tema:** `T03` · Tarım Teknolojileri · **Sürüm:** `0.1.0`
 
 ---
 
-## 1. Görev ve kurallar
+## 📋 İçindekiler
+1. [Bu Proje Ne Yapar?](#1-bu-proje-ne-yapar)
+2. [Yöntem Özeti](#2-yöntem-özeti)
+3. [Gereksinimler ve Kurulum](#3-gereksinimler-ve-kurulum)
+4. [Hızlı Başlangıç](#4-hızlı-başlangıç)
+5. [Komutlar ve Parametreler](#5-komutlar-ve-parametreler)
+6. [Otomatik Üretilen Çıktılar](#6-otomatik-üretilen-çıktılar)
+7. [Kontrollü Deneyler](#7-kontrollü-deneyler)
+8. [Proje Yapısı](#8-proje-yapısı)
+9. [Sınırlar ve Etik Çerçeve](#9-sınırlar-ve-etik-çerçeve)
+10. [Sorun Giderme](#10-sorun-giderme)
+11. [Kaynaklar ve Lisanslar](#11-kaynaklar-ve-lisanslar)
 
-| Madde | Değer |
+---
+
+## 1. Bu proje ne yapar?
+
+Bir tarlada çekilen bitki fotoğrafına bakıp, fotoğraftaki bitkinin **8 zararlı yabancı ot türünden hangisi olduğunu** (ya da bu otlardan hiçbirinin bulunmadığını) tahmin eden uçtan uca bir görüntü sınıflandırma sistemidir. Çıktı olarak 9 sınıfın her biri için bir olasılık üretir ve en yüksek olasılıklı sınıfı bildirir.
+
+> **Örnek Çıktı:** `"Lantana" → %91 · "Negative" → %4 · diğer → %5`
+
+Sistem üç ana bileşenden oluşur:
+1. **Eğitim (`train`)** — Derin öğrenme modeli (ResNet50), ~12.000 etiketli tarla fotoğrafıyla eğitilir.
+2. **Tahmin (`predict`)** — Eğitilmiş model, yarışma formatında tahmin dosyası (`predictions.csv`) üretir.
+3. **Demo / API (`api`)** — Tarayıcı üzerinden fotoğraf yükleyip canlı tahmin yapılan yerel web arayüzü (internetsiz çalışır) ve FastAPI tabanlı programatik servis.
+
+### 🌿 Hedef Sınıflar
+
+| # | Türkçe Adı | Bilimsel / İngilizce Adı |
+|:---:|---|---|
+| **0** | Hint hünnabı | Chinee apple |
+| **1** | Ağaç minesi | Lantana |
+| **2** | Kudüs dikeni | Parkinsonia |
+| **3** | Partenyum otu | Parthenium |
+| **4** | Dikenli akasya | Prickly acacia |
+| **5** | Kauçuk sarmaşığı | Rubber vine |
+| **6** | Siyam otu | Siam weed |
+| **7** | Yılan otu | Snake weed |
+| **8** | Hedef otlardan hiçbiri yok | Negative |
+
+> 📌 **Başarı Ölçütü:** **Macro-F1** (her sınıfın F1 skoru eşit ağırlıkla ortalanır). Bu metrik, az örnekli sınıfların da (örn. Parkinsonia) en büyük sınıf kadar önem taşıdığını garanti eder.
+
+---
+
+## 2. Yöntem özeti
+
+| Bileşen | Seçim / Yaklaşım |
 |---|---|
-| Görev | 9 sınıflı görüntü sınıflandırma (8 yabani ot türü + Negative) |
-| **Ana metrik** | **macro-F1** (karar bununla verilir; accuracy sadece raporlanır) |
-| Seed | `20261019` (dataset kartından) |
-| Veri | 12.109 train · 2.662 val · 2.738 test |
-| Lisans | CC BY 4.0 (kaynak: AlexOlsen/DeepWeeds) |
-
-**Sınıflar:** 0 Chinee apple · 1 Lantana · 2 Parkinsonia · 3 Parthenium · 4 Prickly acacia · 5 Rubber vine · 6 Siam weed · 7 Snake weed · 8 Negative
-
-### Kurallar (ihlal edilmez)
-
-- **Test etiketine asla bakmayız.** Kart, test etiketlerinin kaynaktan geri kazanılabildiğini söylüyor. Bunu kullanmıyoruz. Test sadece en sonda tahmin üretmek için kullanılır.
-- Val, eğitime karıştırılmaz. Tüm kararlar val macro-F1 ile verilir.
-- Ek etiketleme yapılırsa yalnızca eğitim görüntülerinde, kaynak ve yöntem kaydıyla yapılır.
-- Tür bilgisi hastalık veya ilaç dozu etiketi **değildir**. Veri Avustralya'dandır, Türkiye tarımına genelleme iddiası için yerel veri gerekir.
+| **Model** | `ResNet50`, ImageNet ön-eğitimli (`timm`), son katman 9 sınıfa uyarlanmıştır |
+| **Kayıp Fonksiyonu** | Sınıf ağırlıklı Cross-Entropy (ağırlıklar **yalnızca train'den**) + Label Smoothing (`0.1`) |
+| **Sınıf Dengesizliği** | `weighted_loss` (varsayılan) veya `balanced_sampler` veya `none` |
+| **Veri Artırma (Augmentation)** | Sadece train'de, anlık: `RandomResizedCrop` (%60–100) + Yatay Çevirme + `ColorJitter` |
+| **Optimizasyon** | `AdamW` ($\text{lr}=1\text{e-4}$, $\text{wd}=1\text{e-4}$) + Cosine LR + Karma Hassasiyet (`AMP`) |
+| **Model Seçimi** | Erken durdurma (Early Stopping) **val macro-F1** metriğine göre; en iyi ağırlık `best.pt` olarak saklanır |
+| **Test Verisi** | Eğitim ve model seçim süreçlerinde **asla** kullanılmaz; yalnızca nihai tahmin aşamasında bir kez işleme alınır |
 
 ---
 
-## 2. Veri hakkında bildiklerimiz
+## 3. Gereksinimler ve kurulum
 
-- **Dosyalar:** `train.csv`, `val.csv`, `test.csv`, `images/`, dataset kartı (`.json`).
-- **CSV sütunları:** `id`, `path`, `label`, `group_id`, `source_id`, `sha256`, `split`. `group_id` çekim günü + kamera bilgisidir (ör. `20160928_0`).
-- **Test etiketsizdir** (`label` sütunu boş). Test için sadece tahmin üretebiliriz, skoru jüri hesaplar. Tek ölçüm aracımız **val**.
-- **Sızıntı kontrolü temiz:** 0 kopya görsel, split'ler arası 0 ortak `group_id`. Val skoru train'in dürüst bir vekili.
-- **Test'te `group_id` bilgisi görünmüyor** (set sayımı tek değer verdi, büyük olasılıkla boş). Test'in gün/kamera yapısını bilemiyoruz.
-- **Kameralar (0-3) hem train'de hem val'de var.** Asıl kayma çekim günü ve ışık koşulları (karanlık/aydınlık, karmaşık arka plan).
-- **Val küçük:** 14 grup. Sınıf 0 (46) ve 7 (50) için çok az örnek var, bu sınıfların val F1'i gürültülü. Küçük farklara fazla anlam yüklemeyiz.
-
-### Sınıf dağılımı (kaymaya dikkat)
-
-| Sınıf | train | val | test (karttan) |
-|---|---|---|---|
-| 0 Chinee apple | 798 | **46** | 281 |
-| 1 Lantana | 630 | 238 | 196 |
-| 2 Parkinsonia | 580 | 316 | 135 |
-| 3 Parthenium | 772 | 197 | **53** |
-| 4 Prickly acacia | 814 | 161 | **87** |
-| 5 Rubber vine | 667 | 184 | 158 |
-| 6 Siam weed | 495 | 193 | **386** |
-| 7 Snake weed | 857 | **50** | 109 |
-| 8 Negative | 6496 (%54) | 1277 (%48) | 1333 (%49) |
-
-Split'ler arası dağılım ciddi farklı. Bu yüzden "Negative'i bastır" gibi sınıf önselini ayarlayan hileler riskli.
-
----
-
-## 3. Ortam
-
-### Yerel (analiz, rapor, küçük testler)
+* **Gereksinimler:** Python 3.12+, [uv](https://docs.astral.sh/uv/), NVIDIA GPU (önerilir; CPU desteği de mevcuttur ancak yavaştır).
 
 ```bash
-uv init deepweeds --python 3.12
+# 1) Depoyu klonlayın
+git clone <repo-adresi>
 cd deepweeds
-uv venv --python 3.12
-uv add torch torchvision --index pytorch=https://download.pytorch.org/whl/cu124   # GPU yoksa: uv add torch torchvision
-uv add timm scikit-learn pandas numpy matplotlib seaborn pillow ipykernel jupyter tqdm
-uv run python -m ipykernel install --user --name deepweeds --display-name "Python (deepweeds)"
-```
 
-Yerel makine: RTX 2050 (4 GB VRAM). 256px eğitimde VRAM yetmiyor ve çok yavaş kalıyor. Bu yüzden **eğitim Colab'da yapılır.**
+# 2) Bağımlılıkları kurun (torch, torchvision cu124 wheel'leri pyproject'te tanımlıdır)
+uv sync
 
-### Eğitim makinesi: Google Colab (T4)
+# 3) Kurulumu doğrulayın (3 testin geçtiğini görün)
+uv run pytest -q
 
-1. `data/` içeriğini (`images/`, CSV'ler, kart json'u) `data.zip` yapıp Drive'a (`Drive/deepweeds/`) yükle.
-2. Colab'da *Runtime → Change runtime type → T4 GPU*.
-3. Veriyi Drive'dan **yerel diske** aç (Drive'dan doğrudan okumak yavaş), `pip install timm`.
-4. Yollar: veri ve cache yerel diskte (`/content/...`), checkpoint ve sonuçlar Drive'da (oturum kopsa kaybolmasın).
+# 1) Modeli Eğit (RTX 2050'de ~1 saat; tüm loglar ve raporlar runs/ altına kaydedilir)
+uv run deepweeds train --run-name exp01 --model resnet50
 
-### Önerilen klasör yapısı
+# 2) Test Tahminlerini Üret (Yalnızca model seçim aşaması tamamlandıktan sonra!)
+uv run deepweeds predict --run runs/exp01/weights/best.pt --split test --output predictions.csv
 
-```
-deepweeds/
-├── data/            # images/, train.csv, val.csv, test.csv, dataset kartı
-├── notebooks/       # 01_eda_baseline.ipynb
-├── outputs/         # checkpoint'ler, olasılık matrisleri, grafikler
-└── README.md
-```
-
----
-
-## 4. 5 günlük plan
-
-| Gün | İş | Durum |
-|---|---|---|
-| **1** | Keşif, sızıntı kontrolü, hızlı veri hattı, baseline (EfficientNet-B0, düz CE) | Devam ediyor |
-| 2 | Sınıf dengesizliği (class weights / sampler / focal loss), ışık-renk augmentation, `GroupKFold(group_id)` ile ikinci doğrulama | Bekliyor |
-| 3 | Daha güçlü model, TTA, olasılık kalibrasyonu | Bekliyor |
-| 4 | Geliştirme fikri: belirsiz sonuçları uzmana yönlendirme + hızlı çıkarım ölçümü | Bekliyor |
-| 5 | Final eğitim (tam veri ile), test olasılıkları ve tahminleri, kullanıcı senaryosu, sınırlar, rapor | Bekliyor |
-
-### Gün 1: notebook hücre sırası (`01_eda_baseline.ipynb`)
-
-| Hücre | İçerik | Neden |
-|---|---|---|
-| 1 | Import, seed (karttan), `DATA_ROOT`, cihaz | Tekrarlanabilirlik |
-| 2 | CSV'leri yükle, yolları çöz, **kart sayılarıyla doğrula** | Eksik/yanlış veri varsa hemen yakala |
-| 3 | Sınıf dağılımı (train/val/test) | Kaymayı gör |
-| 4 | Örnek görseller | Işık/arka plan çeşitliliğini gör, augmentation'ı buna göre seç |
-| 5 | Sızıntı + grup analizi | Val'in güvenilir olduğunu kanıtla |
-| 6 | Hızlı veri hattı: tüm görseller uint8 dizide, **augmentation GPU'da** | Worker'sız, hızlı, düşük RAM |
-| 7 | Baseline eğitimi (EfficientNet-B0, AdamW + OneCycle, AMP) | Ölçülebilir başlangıç noktası |
-| 8 | Loss/metrik grafikleri, en iyi epoch işareti | Over/underfitting teşhisi |
-| 9 | Sınıf bazlı rapor + confusion matrix | Zorunlu çıktı, yarının odağı |
-
-**Temel tasarım kararları**
-
-- **EfficientNet-B0, ImageNet ön eğitimli:** küçük veriyle sıfırdan eğitmekten çok daha iyi, hafif olduğu için hızlı çıkarım fikrine de uyuyor.
-- **IMG = 256:** görseller zaten 256×256, yeniden boyutlandırma bilgi kaybettirmez.
-- **Düz CrossEntropy:** baseline dengesizliği bilerek çözmüyor, Gün 2'de farkı ölçeceğiz.
-- **Augmentation:** RandomResizedCrop, flip, rotasyon, parlaklık/kontrast/doygunluk. Çekim günü ve ışık kaymasına karşı ana savunma.
-- **En iyi epoch val macro-F1'e göre kaydedilir.** Overfitting'e karşı otomatik koruma.
-- **Hız:** aşamalı çözünürlük (160→208→256), fused AdamW, veri GPU'da.
-
-### Over/underfitting nasıl okunur
-
-| Gözlem | Anlam | Yapılacak |
-|---|---|---|
-| Train loss düşüyor, val loss yükseliyor | Overfitting | Augmentation artır, weight decay artır, epoch azalt |
-| İkisi de yüksek ve düz | Underfitting | Daha büyük model, daha uzun eğitim, lr ayarı |
-| İkisi birlikte düşüyor, yakın | Sağlıklı | Devam |
-| Val macro-F1 sert zıplıyor | Val küçük/gürültülü | Tek epoch'a değil eğilime bak |
-
-Not: Train'de güçlü augmentation olduğundan train loss'un val loss'tan yüksek çıkması normaldir.
-
----
-
-## 5. Teslim edilecekler (kontrol listesi)
-
-- [ ] Test için **dokuz sınıfın olasılıkları** ve sınıf tahmini (`2738 × 9` matris + `argmax`). Dosya formatı yarışma şartnamesinden netleştirilecek.
-- [ ] **Sınıf bazlı sonuçlar** (precision, recall, F1, confusion matrix)
-- [ ] **Kullanıcı senaryosu:** sistemi kim, hangi durumda, nasıl kullanır
-- [ ] **Geliştirme fikri**, seçilip ölçülmüş olarak. Adaylar: düşük donanımda hızlı çıkarım · ışık ve bulanıklık dayanıklılığı · belirsiz sonuçları uzmana yönlendirme · internetsiz tarla demosu
-- [ ] **Sınırlar bölümü:** tür bilgisi hastalık/ilaç etiketi değil, veri Avustralya'dan (Türkiye'ye genelleme iddiası yok), test dağılımı val'den farklı, val küçük
-
----
-
-## 6. Sık karşılaşılan sorunlar
-
-| Sorun | Çözüm |
-|---|---|
-| Eğitim çok yavaş, VRAM dolu | Yerelde Brave ve diğer GPU kullanan süreçleri kapat, ya da Colab'a geç |
-| `Widgets require us to download supporting files` (VS Code) | **Cancel**'a bas, zararsız. Kalıcı: `os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"` (timm importundan önce) |
-| `CUDA out of memory` | Batch size'ı 64'ten 32'ye indir |
-| Bulunamayan görsel sayısı ≠ 0 | CSV yol sütunu ile `images/` yapısını kontrol et |
-| Colab oturumu kopar | Veri/cache yeniden açılır, checkpoint Drive'dan okunur |
-
+# 3) Arayüzü / Demoyu Başlat → Tarayıcıda aç: [http://127.0.0.1:8000](http://127.0.0.1:8000)
+uv run deepweeds api --model runs/exp01/weights/best.pt

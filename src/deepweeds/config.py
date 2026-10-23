@@ -55,7 +55,9 @@ def jsonable(obj: Any) -> Any:
         return [jsonable(v) for v in obj]
     if isinstance(obj, Path):
         return str(obj)
-    if obj is None or isinstance(obj, (str, int, float, bool)):
+    if isinstance(obj, str):  # str alt sınıfları (ör. TorchVersion) düz metne iner
+        return str(obj)
+    if obj is None or isinstance(obj, (int, float, bool)):
         return obj
     if hasattr(obj, "item"):
         try:
