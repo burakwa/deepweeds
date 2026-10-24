@@ -76,7 +76,7 @@ Sistem üç ana bileşenden oluşur:
 
 ```bash
 # 1) Depoyu klonlayın
-git clone <repo-adresi>
+git clone https://github.com/burakwa/deepweeds
 cd deepweeds
 
 # 2) Bağımlılıkları kurun (torch, torchvision cu124 wheel'leri pyproject'te tanımlıdır)
