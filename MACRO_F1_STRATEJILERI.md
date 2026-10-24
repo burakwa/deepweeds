@@ -42,7 +42,7 @@
 # data.py içinde build_train_transform(strong_aug=True) zaten var:
 T.RandomResizedCrop(scale=(0.5, 1.0), ratio=(0.75, 1.33))
 T.RandomHorizontalFlip(p=0.5)
-T.RandomVerticalFlip(p=0.2)           # Tarla görüntülerinde dikey de geçerli
+T.RandomVerticalFlip(p=0.2)  # Tarla görüntülerinde dikey de geçerli
 T.RandomRotation(degrees=15)
 T.ColorJitter(0.3, 0.3, 0.3, 0.05)
 T.RandomGrayscale(p=0.02)

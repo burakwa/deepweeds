@@ -1,11 +1,17 @@
-import pytest
 from pathlib import Path
+
 import pandas as pd
+import pytest
 
 from deepweeds.config import (
-    CLASS_NAMES, NUM_CLASSES, BalanceStrategy,
-    DataConfig, ModelConfig, TrainConfig,
-    jsonable, save_json, build_label_map
+    CLASS_NAMES,
+    NUM_CLASSES,
+    DataConfig,
+    ModelConfig,
+    TrainConfig,
+    build_label_map,
+    jsonable,
+    save_json,
 )
 
 
@@ -16,8 +22,15 @@ class TestConstants:
 
     def test_class_names_content(self):
         expected = (
-            "Chinee apple", "Lantana", "Parkinsonia", "Parthenium", "Prickly acacia",
-            "Rubber vine", "Siam weed", "Snake weed", "Negative"
+            "Chinee apple",
+            "Lantana",
+            "Parkinsonia",
+            "Parthenium",
+            "Prickly acacia",
+            "Rubber vine",
+            "Siam weed",
+            "Snake weed",
+            "Negative",
         )
         assert CLASS_NAMES == expected
 
@@ -127,8 +140,9 @@ class TestSaveJson:
         data = {"key": "value", "nested": {"a": 1}}
         path = tmp_path / "test.json"
         save_json(path, data)
-        
+
         import json
+
         with open(path) as f:
             loaded = json.load(f)
         assert loaded == data

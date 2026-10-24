@@ -6,8 +6,15 @@ from pathlib import Path
 from typing import Any, Literal
 
 CLASS_NAMES: tuple[str, ...] = (
-    "Chinee apple", "Lantana", "Parkinsonia", "Parthenium", "Prickly acacia",
-    "Rubber vine", "Siam weed", "Snake weed", "Negative",
+    "Chinee apple",
+    "Lantana",
+    "Parkinsonia",
+    "Parthenium",
+    "Prickly acacia",
+    "Rubber vine",
+    "Siam weed",
+    "Snake weed",
+    "Negative",
 )
 NUM_CLASSES = len(CLASS_NAMES)
 BalanceStrategy = Literal["none", "weighted_loss", "balanced_sampler"]
@@ -16,9 +23,9 @@ BalanceStrategy = Literal["none", "weighted_loss", "balanced_sampler"]
 @dataclass(slots=True)
 class DataConfig:
     data_dir: Path = Path("data")
-    image_dir: Path | None = None      # görüntülerin ayrı bir klasörde olduğu durumlar için
-    image_col: str | None = None       # CSV'deki görüntü yolu kolonu
-    label_col: str | None = None       # CSV'deki etiket kolonu
+    image_dir: Path | None = None  # görüntülerin ayrı bir klasörde olduğu durumlar için
+    image_col: str | None = None  # CSV'deki görüntü yolu kolonu
+    label_col: str | None = None  # CSV'deki etiket kolonu
     img_size: int = 224
     batch_size: int = 32
     num_workers: int = 4
@@ -50,14 +57,14 @@ class TrainConfig:
 def jsonable(obj: Any) -> Any:
     """Path/np/dataclass tiplerini JSON-uyumlu hale getirir (checkpoint'a gömmeden önce şart)."""
     if is_dataclass(obj) and not isinstance(obj, type):
-        obj = asdict(obj)                      # dataclass → dict; sonra dict dalına düşer
+        obj = asdict(obj)  # dataclass → dict; sonra dict dalına düşer
     if isinstance(obj, dict):
         return {str(k): jsonable(v) for k, v in obj.items()}
     if isinstance(obj, (list, tuple)):
         return [jsonable(v) for v in obj]
     if isinstance(obj, Path):
         return str(obj)
-    if isinstance(obj, str):                   # str alt sınıfları (ör. TorchVersion) düz metne iner
+    if isinstance(obj, str):  # str alt sınıfları (ör. TorchVersion) düz metne iner
         return str(obj)
     if obj is None or isinstance(obj, (int, float, bool)):
         return obj
@@ -72,7 +79,9 @@ def jsonable(obj: Any) -> Any:
 def save_json(path: Path, obj: Any) -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(jsonable(obj), indent=2, ensure_ascii=False), encoding="utf-8")
+    path.write_text(
+        json.dumps(jsonable(obj), indent=2, ensure_ascii=False), encoding="utf-8"
+    )
 
 
 def _norm(s: str) -> str:
@@ -94,10 +103,21 @@ def build_label_map(series) -> dict[Any, int]:
         s = _norm(v)
         hit = next((i for i, c in enumerate(CLASS_NAMES) if s == c.lower()), None)
         if hit is None:
-            hit = next((i for i, c in enumerate(CLASS_NAMES)
-                        if s.startswith(c.lower()[:8]) or c.lower().startswith(s[:8])), None)
+            hit = next(
+                (
+                    i
+                    for i, c in enumerate(CLASS_NAMES)
+                    if s.startswith(c.lower()[:8]) or c.lower().startswith(s[:8])
+                ),
+                None,
+            )
         mapping[v] = hit
-    if any(v is None for v in mapping.values()) or len(set(mapping.values())) != NUM_CLASSES:
+    if (
+        any(v is None for v in mapping.values())
+        or len(set(mapping.values())) != NUM_CLASSES
+    ):
         bad = [k for k, v in mapping.items() if v is None]
-        raise ValueError(f"Etiketler sınıf adlarıyla eşleşmedi: {bad}. Kolon adını kontrol edin.")
+        raise ValueError(
+            f"Etiketler sınıf adlarıyla eşleşmedi: {bad}. Kolon adını kontrol edin."
+        )
     return {k: int(v) for k, v in mapping.items()}

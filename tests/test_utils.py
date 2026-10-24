@@ -1,37 +1,37 @@
-import pytest
-import torch
-import numpy as np
 import random
 
-from deepweeds.utils import set_seed, get_device, get_logger
+import numpy as np
+import torch
+
+from deepweeds.utils import get_device, get_logger, set_seed
 
 
 class TestSetSeed:
     def test_sets_python_random_seed(self):
         set_seed(42)
         val1 = random.random()
-        
+
         set_seed(42)
         val2 = random.random()
-        
+
         assert val1 == val2
 
     def test_sets_numpy_seed(self):
         set_seed(123)
         val1 = np.random.rand()
-        
+
         set_seed(123)
         val2 = np.random.rand()
-        
+
         assert val1 == val2
 
     def test_sets_torch_seed(self):
         set_seed(456)
         val1 = torch.rand(1).item()
-        
+
         set_seed(456)
         val2 = torch.rand(1).item()
-        
+
         assert val1 == val2
 
     def test_deterministic_flag_sets_cudnn(self):

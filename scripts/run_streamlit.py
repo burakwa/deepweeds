@@ -7,6 +7,7 @@ Usage:
     python scripts/run_streamlit.py --model runs/exp-effb3-sqrt/weights/best.pt
     python scripts/run_streamlit.py --model runs/exp01/weights/best.pt --port 8501
 """
+
 from __future__ import annotations
 
 import argparse
@@ -16,30 +17,25 @@ from pathlib import Path
 
 
 def main():
-    parser = argparse.ArgumentParser(description="DeepWeeds Streamlit Uygulamasını Başlat")
+    parser = argparse.ArgumentParser(
+        description="DeepWeeds Streamlit Uygulamasını Başlat"
+    )
     parser.add_argument(
         "--model",
         type=str,
         default=None,
-        help="Model checkpoint yolu (varsayılan: runs/exp-effb3-sqrt/weights/best.pt)"
+        help="Model checkpoint yolu (varsayılan: runs/exp-effb3-sqrt/weights/best.pt)",
     )
     parser.add_argument(
-        "--port",
-        type=int,
-        default=8501,
-        help="Streamlit port (varsayılan: 8501)"
+        "--port", type=int, default=8501, help="Streamlit port (varsayılan: 8501)"
     )
     parser.add_argument(
         "--host",
         type=str,
         default="localhost",
-        help="Streamlit host (varsayılan: localhost)"
+        help="Streamlit host (varsayılan: localhost)",
     )
-    parser.add_argument(
-        "--browser",
-        action="store_true",
-        help="Tarayıcıyı otomatik aç"
-    )
+    parser.add_argument("--browser", action="store_true", help="Tarayıcıyı otomatik aç")
     args = parser.parse_args()
 
     # Proje kök dizinini bul
@@ -60,10 +56,14 @@ def main():
     # Streamlit komutunu hazırla
     cmd = [
         sys.executable,
-        "-m", "streamlit", "run",
+        "-m",
+        "streamlit",
+        "run",
         str(streamlit_app),
-        "--server.port", str(args.port),
-        "--server.address", args.host,
+        "--server.port",
+        str(args.port),
+        "--server.address",
+        args.host,
     ]
 
     if args.browser:
@@ -74,7 +74,7 @@ def main():
     if args.model:
         cmd.extend(["--", "--model", args.model])
 
-    print(f"🚀 DeepWeeds Streamlit başlatılıyor...")
+    print("🚀 DeepWeeds Streamlit başlatılıyor...")
     print(f"   Uygulama: {streamlit_app}")
     print(f"   Adres: http://{args.host}:{args.port}")
     if args.model:

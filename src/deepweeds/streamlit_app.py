@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import io
 import time
 from pathlib import Path
 from typing import Any
@@ -36,9 +35,13 @@ class ModelService:
         if self._checkpoint_path is None:
             self._checkpoint_path = Path("runs/exp-effb3-sqrt/weights/best.pt")
         if not self._checkpoint_path.exists():
-            raise FileNotFoundError(f"Model checkpoint bulunamadı: {self._checkpoint_path}")
+            raise FileNotFoundError(
+                f"Model checkpoint bulunamadı: {self._checkpoint_path}"
+            )
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self._predictor = Predictor.from_checkpoint(self._checkpoint_path, device=device)
+        self._predictor = Predictor.from_checkpoint(
+            self._checkpoint_path, device=device
+        )
 
     @property
     def predictor(self) -> Predictor:
@@ -76,6 +79,7 @@ class InferenceEngine:
 
     def benchmark(self, n_samples: int = 10) -> dict[str, float]:
         import pandas as pd
+
         test_df = pd.read_csv("data/test.csv")
         return self.service.predictor.benchmark_latency(test_df, n=n_samples)
 
@@ -100,7 +104,11 @@ class StreamlitUI:
     def render_sidebar(self) -> dict[str, Any]:
         with st.sidebar:
             st.header("⚙️ Ayarlar")
-            use_tta = st.checkbox("Test-Time Augmentation (TTA)", value=False, help="5 farklı augmentasyon ile tahmin alıp ortalama alır (daha yavaş, daha kararlı)")
+            use_tta = st.checkbox(
+                "Test-Time Augmentation (TTA)",
+                value=False,
+                help="5 farklı augmentasyon ile tahmin alıp ortalama alır (daha yavaş, daha kararlı)",
+            )
             st.divider()
             st.subheader("📊 Model Bilgisi")
             st.metric("Cihaz", str(self.engine.service.device).upper())
@@ -133,8 +141,10 @@ class StreamlitUI:
         with col1:
             st.image(image, caption="Yüklenen Görsel", use_container_width=True)
         with col2:
-            st.info(f"📐 Orijinal boyut: {image.size[0]}×{image.size[1]} px\n"
-                    f"🎨 Mod: {image.mode}")
+            st.info(
+                f"📐 Orijinal boyut: {image.size[0]}×{image.size[1]} px\n"
+                f"🎨 Mod: {image.mode}"
+            )
 
     def render_results(self, probs: np.ndarray, latency_ms: float) -> None:
         pred_idx = int(probs.argmax())
@@ -150,7 +160,7 @@ class StreamlitUI:
         cols = st.columns(3)
         for i, (name, prob) in enumerate(zip(self.class_names, probs)):
             with cols[i % 3]:
-                st.metric(label=name, value=f"{prob*100:.1f}%")
+                st.metric(label=name, value=f"{prob * 100:.1f}%")
 
         st.divider()
         st.subheader("📊 Olasılık Dağılımı")
@@ -201,7 +211,13 @@ def main(checkpoint_path: Path | None = None) -> None:
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(description="DeepWeeds Streamlit Uygulaması")
-    parser.add_argument("--model", type=str, default=None, help="Model checkpoint yolu (varsayılan: runs/exp-effb3-sqrt/weights/best.pt)")
+    parser.add_argument(
+        "--model",
+        type=str,
+        default=None,
+        help="Model checkpoint yolu (varsayılan: runs/exp-effb3-sqrt/weights/best.pt)",
+    )
     args = parser.parse_args()
     main(Path(args.model) if args.model else None)

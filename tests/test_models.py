@@ -1,17 +1,19 @@
 import pytest
-import torch
-import torch.nn as nn
+from torch import nn
 
 from deepweeds.config import ModelConfig
-from deepweeds.models import build_model, count_parameters, SUGGESTED_MODELS
+from deepweeds.models import SUGGESTED_MODELS, build_model, count_parameters
 
 
 class TestBuildModel:
-    @pytest.mark.parametrize("model_name", [
-        "resnet18",
-        "resnet34",
-        "resnet50",
-    ])
+    @pytest.mark.parametrize(
+        "model_name",
+        [
+            "resnet18",
+            "resnet34",
+            "resnet50",
+        ],
+    )
     def test_build_model_creates_module(self, model_name):
         cfg = ModelConfig(name=model_name, pretrained=False)
         model = build_model(cfg)
@@ -21,16 +23,16 @@ class TestBuildModel:
         cfg = ModelConfig(name="resnet18", num_classes=9, pretrained=False)
         model = build_model(cfg)
         # Check final layer output size
-        if hasattr(model, 'fc'):
+        if hasattr(model, "fc"):
             assert model.fc.out_features == 9
-        elif hasattr(model, 'classifier'):
+        elif hasattr(model, "classifier"):
             if isinstance(model.classifier, nn.Linear):
                 assert model.classifier.out_features == 9
             else:
                 # For models with Sequential classifier
                 last_layer = list(model.classifier.children())[-1]
                 assert last_layer.out_features == 9
-        elif hasattr(model, 'head'):
+        elif hasattr(model, "head"):
             if isinstance(model.head, nn.Linear):
                 assert model.head.out_features == 9
             else:

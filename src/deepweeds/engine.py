@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 import timm
 import torch
-import torch.nn as nn
 from sklearn.metrics import f1_score
+from torch import nn
 from torch.amp import GradScaler, autocast
 from tqdm import tqdm
 
@@ -19,8 +19,15 @@ from deepweeds.utils import get_logger
 
 
 class Trainer:
-    def __init__(self, model: nn.Module, data: DeepWeedsData, model_cfg: ModelConfig,
-                 cfg: TrainConfig, run_dir: Path, device: torch.device):
+    def __init__(
+        self,
+        model: nn.Module,
+        data: DeepWeedsData,
+        model_cfg: ModelConfig,
+        cfg: TrainConfig,
+        run_dir: Path,
+        device: torch.device,
+    ):
         self.model = model.to(device)
         self.data, self.model_cfg, self.cfg = data, model_cfg, cfg
         self.run_dir, self.device = Path(run_dir), device
@@ -32,17 +39,21 @@ class Trainer:
 
         self.criterion = self._build_criterion()
         self.eval_criterion = nn.CrossEntropyLoss()
-        self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=cfg.lr,
-                                           weight_decay=cfg.weight_decay)
-        self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=cfg.epochs)
+        self.optimizer = torch.optim.AdamW(
+            self.model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay
+        )
+        self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            self.optimizer, T_max=cfg.epochs
+        )
         self.use_amp = cfg.amp and device.type == "cuda"
         self.scaler = GradScaler("cuda", enabled=self.use_amp)
 
     def _build_criterion(self) -> nn.CrossEntropyLoss:
         ls = self.cfg.label_smoothing
         if self.cfg.balance == "weighted_loss":  # ağırlıklar yalnızca train'den
-            return nn.CrossEntropyLoss(weight=self.data.class_weights.to(self.device),
-                                       label_smoothing=ls)
+            return nn.CrossEntropyLoss(
+                weight=self.data.class_weights.to(self.device), label_smoothing=ls
+            )
         return nn.CrossEntropyLoss(label_smoothing=ls)
 
     def fit(self) -> float:
@@ -57,12 +68,26 @@ class Trainer:
             y_pred = y_prob.argmax(1)
             f1 = float(f1_score(y_true, y_pred, average="macro", zero_division=0))
             acc = float((y_true == y_pred).mean())
-            self.history.append(dict(epoch=epoch, train_loss=train_loss, val_loss=val_loss,
-                                     val_macro_f1=f1, val_accuracy=acc,
-                                     lr=self.optimizer.param_groups[0]["lr"],
-                                     seconds=round(time.perf_counter() - t0, 1)))
-            log.info("epoch %02d | train %.4f | val %.4f | macroF1 %.4f | acc %.4f | %.0fs",
-                     epoch, train_loss, val_loss, f1, acc, time.perf_counter() - t0)
+            self.history.append(
+                dict(
+                    epoch=epoch,
+                    train_loss=train_loss,
+                    val_loss=val_loss,
+                    val_macro_f1=f1,
+                    val_accuracy=acc,
+                    lr=self.optimizer.param_groups[0]["lr"],
+                    seconds=round(time.perf_counter() - t0, 1),
+                )
+            )
+            log.info(
+                "epoch %02d | train %.4f | val %.4f | macroF1 %.4f | acc %.4f | %.0fs",
+                epoch,
+                train_loss,
+                val_loss,
+                f1,
+                acc,
+                time.perf_counter() - t0,
+            )
             if f1 > self.best_f1:
                 self.best_f1, patience = f1, 0
                 self._save_checkpoint(epoch, f1)
@@ -125,12 +150,18 @@ class Trainer:
 
     def _save_checkpoint(self, epoch: int, f1: float) -> None:
         ckpt = {
-            "state_dict": {k: v.detach().cpu().clone() for k, v in self.model.state_dict().items()},
+            "state_dict": {
+                k: v.detach().cpu().clone() for k, v in self.model.state_dict().items()
+            },
             "class_names": self.data.class_names,
             "label2id": {str(k): int(v) for k, v in self.data.label2id.items()},
-            "config": jsonable({"model": self.model_cfg, "train": self.cfg, "data": self.data.cfg}),
-            "epoch": epoch, "val_macro_f1": f1,
-            "torch": str(torch.__version__), "timm": str(timm.__version__),  # ← düz str!
+            "config": jsonable(
+                {"model": self.model_cfg, "train": self.cfg, "data": self.data.cfg}
+            ),
+            "epoch": epoch,
+            "val_macro_f1": f1,
+            "torch": str(torch.__version__),
+            "timm": str(timm.__version__),  # ← düz str!
             "saved_at": datetime.now().isoformat(timespec="seconds"),
         }
         tmp = self.best_path.with_suffix(".tmp")

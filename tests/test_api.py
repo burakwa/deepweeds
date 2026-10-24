@@ -1,19 +1,20 @@
-import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
-from pathlib import Path
 import io
-from PIL import Image
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
 import numpy as np
+import pytest
+from PIL import Image
 
 from deepweeds.api import (
-    PredictionResponse,
-    BatchPredictionResponse,
-    HealthResponse,
-    ClassesResponse,
-    ModelService,
-    create_app,
     BATCH_LIMIT,
     DEMO_HTML,
+    BatchPredictionResponse,
+    ClassesResponse,
+    HealthResponse,
+    ModelService,
+    PredictionResponse,
+    create_app,
 )
 
 
@@ -72,9 +73,9 @@ class TestModelService:
 
     def test_predict_single(self, mock_predictor, valid_image_bytes):
         service = ModelService(mock_predictor)
-        
+
         result = service.predict_single("test.jpg", valid_image_bytes)
-        
+
         assert isinstance(result, PredictionResponse)
         assert result.filename == "test.jpg"
         assert result.top_class == "B"  # index 1 has 0.7
@@ -82,13 +83,13 @@ class TestModelService:
 
     def test_predict_batch(self, mock_predictor, valid_image_bytes):
         service = ModelService(mock_predictor)
-        
+
         files = [
             ("img1.jpg", valid_image_bytes),
             ("img2.jpg", valid_image_bytes),
         ]
         result = service.predict_batch(files)
-        
+
         assert isinstance(result, BatchPredictionResponse)
         assert result.count == 2
         assert len(result.results) == 2
@@ -96,11 +97,12 @@ class TestModelService:
 
     def test_predict_single_invalid_image(self, mock_predictor):
         service = ModelService(mock_predictor)
-        
+
         # Mock PIL to raise UnidentifiedImageError
         from PIL import UnidentifiedImageError
+
         mock_predictor.predict_pil.side_effect = UnidentifiedImageError("invalid")
-        
+
         with pytest.raises(ValueError, match="geçerli bir görüntü değil"):
             service.predict_single("bad.jpg", b"not_an_image")
 
@@ -114,9 +116,9 @@ class TestCreateApp:
         mock_predictor.checkpoint_path = Path("test.pt")
         mock_predictor.device = "cpu"
         mock_from_checkpoint.return_value = mock_predictor
-        
+
         app = create_app("test.pt")
-        
+
         assert app.title == "DeepWeeds API"
         assert app.version == "0.1.0"
 

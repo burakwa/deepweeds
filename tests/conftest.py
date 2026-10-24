@@ -1,11 +1,11 @@
-import pytest
-import torch
+import tempfile
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
+import pytest
+import torch
 from PIL import Image
-import tempfile
-import shutil
 
 
 @pytest.fixture(scope="session")
@@ -16,8 +16,15 @@ def device():
 @pytest.fixture(scope="session")
 def class_names():
     return (
-        "Chinee apple", "Lantana", "Parkinsonia", "Parthenium", "Prickly acacia",
-        "Rubber vine", "Siam weed", "Snake weed", "Negative"
+        "Chinee apple",
+        "Lantana",
+        "Parkinsonia",
+        "Parthenium",
+        "Prickly acacia",
+        "Rubber vine",
+        "Siam weed",
+        "Snake weed",
+        "Negative",
     )
 
 
@@ -32,12 +39,14 @@ def sample_dataframe():
     """Create a sample DataFrame with mock data."""
     np.random.seed(42)
     n = 100
-    df = pd.DataFrame({
-        "id": [f"T03_{i:05d}" for i in range(n)],
-        "path": [f"images/T03_{i:05d}.jpg" for i in range(n)],
-        "label": np.random.randint(0, 9, n),
-        "group_id": [f"group_{i % 10}" for i in range(n)],
-    })
+    df = pd.DataFrame(
+        {
+            "id": [f"T03_{i:05d}" for i in range(n)],
+            "path": [f"images/T03_{i:05d}.jpg" for i in range(n)],
+            "label": np.random.randint(0, 9, n),
+            "group_id": [f"group_{i % 10}" for i in range(n)],
+        }
+    )
     return df
 
 
@@ -46,11 +55,11 @@ def mock_images(temp_dir, sample_dataframe):
     """Create mock image files for testing."""
     img_dir = temp_dir / "images"
     img_dir.mkdir()
-    
+
     for _, row in sample_dataframe.iterrows():
         img = Image.fromarray(np.random.randint(0, 255, (224, 224, 3), dtype=np.uint8))
         img.save(img_dir / Path(row["path"]).name)
-    
+
     return img_dir
 
 

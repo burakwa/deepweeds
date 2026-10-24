@@ -7,6 +7,7 @@ Macro-F1 skorunu anında yukarı çeker.
 Kullanım:
     .\.venv\Scripts\python.exe calibrate.py --run runs/exp01-weighted
 """
+
 from __future__ import annotations
 
 import argparse
@@ -25,9 +26,17 @@ from scipy.optimize import minimize
 from sklearn.metrics import classification_report, f1_score
 
 CLASS_NAMES = [
-    "Chinee apple", "Lantana", "Parkinsonia", "Parthenium", "Prickly acacia",
-    "Rubber vine", "Siam weed", "Snake weed", "Negative"
+    "Chinee apple",
+    "Lantana",
+    "Parkinsonia",
+    "Parthenium",
+    "Prickly acacia",
+    "Rubber vine",
+    "Siam weed",
+    "Snake weed",
+    "Negative",
 ]
+
 
 def calibrate_run(run_dir: str | Path, val_csv: str | Path = "data/val.csv"):
     run_path = Path(run_dir)
@@ -79,6 +88,7 @@ def calibrate_run(run_dir: str | Path, val_csv: str | Path = "data/val.csv"):
     out_json.write_text(json.dumps(data, indent=2), encoding="utf-8")
     print(f"Carpanlar kaydedildi: {out_json}")
     return calib_f1, best_w
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

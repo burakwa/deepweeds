@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import timm
-import torch.nn as nn
+from torch import nn
 
 from deepweeds.config import ModelConfig
 
@@ -18,7 +18,9 @@ SUGGESTED_MODELS = (
 def build_model(cfg: ModelConfig) -> nn.Module:
     """timm'den model oluşturur; pretrained=False ise ağ iner ama ağırlık indirmez
     (jüri ortamında offline çıkarım için bunu kullanıyoruz)."""
-    return timm.create_model(cfg.name, pretrained=cfg.pretrained, num_classes=cfg.num_classes)
+    return timm.create_model(
+        cfg.name, pretrained=cfg.pretrained, num_classes=cfg.num_classes
+    )
 
 
 def count_parameters(model: nn.Module) -> int:

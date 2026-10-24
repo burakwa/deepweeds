@@ -8,6 +8,7 @@ POST /predict     → Tek görüntü sınıflandırma
 POST /predict/batch → Çoklu görüntü (max 16)
 GET  /classes     → Sınıf adları listesi
 """
+
 from __future__ import annotations
 
 import io
@@ -36,6 +37,7 @@ BATCH_LIMIT = 16  # tek istekte kabul edilen maksimum görüntü sayısı
 # ---------------------------------------------------------------------------
 # Pydantic şemaları
 # ---------------------------------------------------------------------------
+
 
 class PredictionResponse(BaseModel):
     filename: str
@@ -69,6 +71,7 @@ class ClassesResponse(BaseModel):
 # Servis katmanı
 # ---------------------------------------------------------------------------
 
+
 class ModelService:
     """Predictor üzerinde thread-güvenli ince sarmalayıcı."""
 
@@ -91,8 +94,10 @@ class ModelService:
             filename=filename,
             top_class=self._predictor.class_names[idx],
             top_prob=round(float(probs[idx]), 6),
-            probabilities={c: round(float(p), 6)
-                           for c, p in zip(self._predictor.class_names, probs)},
+            probabilities={
+                c: round(float(p), 6)
+                for c, p in zip(self._predictor.class_names, probs)
+            },
             latency_ms=round(ms, 2),
         )
 
@@ -310,13 +315,16 @@ DEMO_HTML = """<!doctype html>
 # Uygulama fabrikası
 # ---------------------------------------------------------------------------
 
+
 def create_app(model_path: str | Path, device: str | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         log.info("Model yükleniyor: %s", model_path)
         predictor = Predictor.from_checkpoint(model_path, device)
         app.state.service = ModelService(predictor)
-        log.info("Hazır — sınıflar: %s | cihaz: %s", predictor.class_names, predictor.device)
+        log.info(
+            "Hazır — sınıflar: %s | cihaz: %s", predictor.class_names, predictor.device
+        )
         yield
         log.info("Uygulama kapatılıyor.")
 
@@ -358,8 +366,12 @@ def create_app(model_path: str | Path, device: str | None = None) -> FastAPI:
         p: Predictor = app.state.service._predictor
         return ClassesResponse(classes=p.class_names, count=len(p.class_names))
 
-    @app.post("/predict", response_model=PredictionResponse, summary="Tek görüntü sınıflandır")
-    async def predict(file: Annotated[UploadFile, File(description="Sınıflandırılacak görüntü")]) -> PredictionResponse:
+    @app.post(
+        "/predict", response_model=PredictionResponse, summary="Tek görüntü sınıflandır"
+    )
+    async def predict(
+        file: Annotated[UploadFile, File(description="Sınıflandırılacak görüntü")],
+    ) -> PredictionResponse:
         data = await file.read()
         if not data:
             raise HTTPException(400, "Boş dosya gönderildi.")
@@ -368,10 +380,15 @@ def create_app(model_path: str | Path, device: str | None = None) -> FastAPI:
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
 
-    @app.post("/predict/batch", response_model=BatchPredictionResponse,
-              summary=f"Çoklu görüntü sınıflandır (max {BATCH_LIMIT})")
+    @app.post(
+        "/predict/batch",
+        response_model=BatchPredictionResponse,
+        summary=f"Çoklu görüntü sınıflandır (max {BATCH_LIMIT})",
+    )
     async def predict_batch(
-        files: Annotated[list[UploadFile], File(description=f"Görüntü listesi (max {BATCH_LIMIT})")]
+        files: Annotated[
+            list[UploadFile], File(description=f"Görüntü listesi (max {BATCH_LIMIT})")
+        ],
     ) -> BatchPredictionResponse:
         if len(files) > BATCH_LIMIT:
             raise HTTPException(400, f"En fazla {BATCH_LIMIT} görüntü gönderilebilir.")

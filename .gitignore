@@ -36,3 +36,7 @@ runs/
 Thumbs.db
 
 predictions.csv
+
+.ruff_cache/
+
+.pytest_cache/

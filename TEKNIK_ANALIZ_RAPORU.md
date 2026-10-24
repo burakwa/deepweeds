@@ -67,7 +67,7 @@ criterion = CrossEntropyLoss(weight=sqrt_w, label_smoothing=0.1)
 
 #### C. `balanced_sampler` (`data.py:193-201`)
 ```python
-sampler = WeightedRandomSampler(weights=1/class_counts, num_samples=len(ds))
+sampler = WeightedRandomSampler(weights=1 / class_counts, num_samples=len(ds))
 ```
 Batch içinde sınıf dengesini sağlar, hızlı yakınsama ama overfit riski.
 
@@ -77,12 +77,12 @@ Batch içinde sınıf dengesini sağlar, hızlı yakınsama ama overfit riski.
 
 ```python
 SUGGESTED_MODELS = (
-    "resnet50",           # 25M  — Baseline (0.7300)
-    "convnext_tiny",      # 28M  — **Mevcut en iyi (0.7419)**
-    "convnext_small",     # 50M  — Hedef: 0.77-0.79
+    "resnet50",  # 25M  — Baseline (0.7300)
+    "convnext_tiny",  # 28M  — **Mevcut en iyi (0.7419)**
+    "convnext_small",  # 50M  — Hedef: 0.77-0.79
     "mobilenetv3_large_100",
-    "efficientnet_b0",    # 5M   — Hızlı baseline
-    "efficientnet_b3",    # 12M  — 256px ile hedef: 0.76-0.78
+    "efficientnet_b0",  # 5M   — Hızlı baseline
+    "efficientnet_b3",  # 12M  — 256px ile hedef: 0.76-0.78
     "vit_small_patch16_224",
 )
 ```
@@ -100,7 +100,7 @@ SUGGESTED_MODELS = (
 ```python
 RandomResizedCrop(scale=(0.6, 1.0))
 RandomHorizontalFlip()
-RandomVerticalFlip(p=0.2)      # Tarla görüntülerinde dikey geçerli
+RandomVerticalFlip(p=0.2)  # Tarla görüntülerinde dikey geçerli
 ColorJitter(0.3, 0.3, 0.3, 0.05)
 RandomErasing(p=0.15)
 ```
@@ -124,12 +124,12 @@ RandomErasing(p=0.25, scale=(0.02, 0.2), ratio=(0.3, 3.3))
 ```python
 # OneCycleLR (sweep'te varsayılan)
 OneCycleLR(
-    max_lr=lr * 10,           # 1e-3
+    max_lr=lr * 10,  # 1e-3
     epochs=20,
     steps_per_epoch=len(train_loader),
-    pct_start=0.3,            # 30% warmup
+    pct_start=0.3,  # 30% warmup
     div_factor=10.0,
-    final_div_factor=1e4,     # Son LR = max_lr / 1e4
+    final_div_factor=1e4,  # Son LR = max_lr / 1e4
 )
 ```
 **Avantaj:** CosineAnnealingLR'dan hızlı yakınsama, daha iyi generalizasyon.
@@ -146,6 +146,7 @@ Model "Negative" sınıfına **over-confident** → diğer sınıflar ezberlenir
 def opt_objective(weights):
     pred_scaled = np.argmax(y_prob * weights, axis=1)
     return -f1_score(y_true, pred_scaled, average="macro")
+
 
 calib_res = minimize(opt_objective, np.ones(9), method="Nelder-Mead", maxiter=400)
 ```
@@ -168,11 +169,11 @@ calib_res = minimize(opt_objective, np.ones(9), method="Nelder-Mead", maxiter=40
 ```python
 def build_tta_transforms(img_size) -> list[Compose]:
     return [
-        CenterCrop (orijinal),
+        CenterCrop(orijinal),
         CenterCrop + HFlip,
         CenterCrop + VFlip,
-        FiveCrop[0] (sol-üst),
-        FiveCrop[4] (merkez),
+        FiveCrop[0](sol - üst),
+        FiveCrop[4](merkez),
     ]
 ```
 **Etki:** +0.01-0.02 F1, **5× yavaşlatır**. inference.py'de entegre.
@@ -305,7 +306,7 @@ self.mixup_fn = Mixup(
     num_classes=9,
     prob=1.0,
     switch_prob=0.5,
-    mode='batch',
+    mode="batch",
     label_smoothing=0.1,
 )
 
@@ -317,17 +318,17 @@ x, y = self.mixup_fn(x, y)  # forward'dan önce
 
 ```python
 class FocalLoss(nn.Module):
-    def __init__(self, alpha=None, gamma=2.0, reduction='mean'):
+    def __init__(self, alpha=None, gamma=2.0, reduction="mean"):
         super().__init__()
         self.alpha = alpha
         self.gamma = gamma
         self.reduction = reduction
-    
+
     def forward(self, inputs, targets):
-        ce_loss = F.cross_entropy(inputs, targets, reduction='none', weight=self.alpha)
+        ce_loss = F.cross_entropy(inputs, targets, reduction="none", weight=self.alpha)
         pt = torch.exp(-ce_loss)
         focal_loss = (1 - pt) ** self.gamma * ce_loss
-        return focal_loss.mean() if self.reduction == 'mean' else focal_loss.sum()
+        return focal_loss.mean() if self.reduction == "mean" else focal_loss.sum()
 ```
 
 ### 6.3 LR Finder Ekleme (Optimal LR bulmak için)

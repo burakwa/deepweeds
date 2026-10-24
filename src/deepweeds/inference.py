@@ -17,32 +17,44 @@ from deepweeds.models import build_model
 
 class PredictResult(NamedTuple):
     """predict_df dönüş tipi: gerçek etiketler ve olasılık matrisi."""
+
     y_true: np.ndarray  # int, test setinde -1
     y_prob: np.ndarray  # shape (N, num_classes), satırlar toplamı 1
 
 
 class Predictor:
-    def __init__(self, model, class_names: list[str], img_size: int, device, meta: dict,
-                 checkpoint_path: Path | None = None):
+    def __init__(
+        self,
+        model,
+        class_names: list[str],
+        img_size: int,
+        device,
+        meta: dict,
+        checkpoint_path: Path | None = None,
+    ):
         self.model, self.class_names = model, class_names
         self.img_size, self.device, self.meta = img_size, device, meta
         self.checkpoint_path = checkpoint_path
         self.transform = build_eval_transform(img_size)
 
     @classmethod
-    def from_checkpoint(cls, path: str | Path, device=None) -> "Predictor":
+    def from_checkpoint(cls, path: str | Path, device=None) -> Predictor:
         path = Path(path)
         device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if isinstance(device, str):
             device = torch.device(device)
-        ckpt = torch.load(path, map_location="cpu", weights_only=True)  # torch>=2.6 uyumlu
+        ckpt = torch.load(
+            path, map_location="cpu", weights_only=True
+        )  # torch>=2.6 uyumlu
         cfg = ckpt["config"]
         model_cfg = ModelConfig(**cfg["model"])
         model_cfg.pretrained = False  # offline: ağırlık zaten checkpoint içinde
         model = build_model(model_cfg)
         model.load_state_dict(ckpt["state_dict"])
         model.to(device).eval()
-        return cls(model, ckpt["class_names"], int(cfg["data"]["img_size"]), device, ckpt, path)
+        return cls(
+            model, ckpt["class_names"], int(cfg["data"]["img_size"]), device, ckpt, path
+        )
 
     @property
     def size_bytes(self) -> int:
@@ -109,7 +121,7 @@ class Predictor:
     @torch.no_grad()
     def predict_tta(self, image: Image.Image) -> np.ndarray:
         """Test-Time Augmentation: 5 farklı transform ile tahmin alıp ortalama alır.
-        
+
         Returns
         -------
         np.ndarray: shape (num_classes,) — ortalama softmax olasılıkları
@@ -124,9 +136,14 @@ class Predictor:
         return np.mean(probs, axis=0)
 
 
-def write_predictions_csv(path: str | Path, ids: pd.Series, probs: np.ndarray,
-                          latency_ms: float, size_bytes: int,
-                          multipliers: np.ndarray | list[float] | None = None) -> pd.DataFrame:
+def write_predictions_csv(
+    path: str | Path,
+    ids: pd.Series,
+    probs: np.ndarray,
+    latency_ms: float,
+    size_bytes: int,
+    multipliers: np.ndarray | list[float] | None = None,
+) -> pd.DataFrame:
     """Yarışma formatı: id,prediction,prob_0..prob_8,latency_ms,bytes"""
     k = probs.shape[1]
     if multipliers is not None:
