@@ -71,6 +71,28 @@ class Predictor:
         return torch.softmax(logits.float(), dim=1).cpu().numpy()[0]
 
     @torch.no_grad()
+    def predict_batch(self, images: list[Image.Image], batch_size: int = 16) -> np.ndarray:
+        """Birden çok görüntüyü tek başı ileri geçişlerle sınıflandırır.
+
+        Video kare taraması gibi çoklu pencere senaryolarında tek tek
+        predict_pil çağrısına göre belirgin biçimde hızlıdır.
+
+        Returns
+        -------
+        np.ndarray: shape (len(images), num_classes) softmax olasılık matrisi.
+        """
+        if not images:
+            return np.zeros((0, len(self.class_names)), dtype=np.float32)
+        probs: list[np.ndarray] = []
+        for i in range(0, len(images), batch_size):
+            chunk = [img.convert("RGB") for img in images[i : i + batch_size]]
+            x = torch.stack([self.transform(img) for img in chunk]).to(self.device)
+            with torch.autocast("cuda", enabled=self.device.type == "cuda"):
+                logits = self.model(x)
+            probs.append(torch.softmax(logits.float(), dim=1).cpu().numpy())
+        return np.vstack(probs)
+
+    @torch.no_grad()
     def predict_df(self, df: pd.DataFrame, batch_size: int = 32) -> PredictResult:
         """DataFrame üzerinde toplu çıkarım.
 

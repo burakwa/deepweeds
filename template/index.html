@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+.sidebar-overlay {
+position: fixed;
+top: 0;
+left: 0;
+width: 100vw;
+height: 100vh;
+background-color: rgba(0,0,0,0.4);
+opacity: 0;
+visibility: hidden;
+transition: opacity 0.3s ease, visibility 0.3s ease;
+z-index: 998;
+}
+
+.sidebar-overlay.active {
+opacity: 1;
+visibility: visible;
+}
+/* SİDEBAR İÇERİK DÜZENİ*/
+.sidebar {
+position: fixed;
+top: 0;
+left: -280px;
+width: 260px;
+height: 100vh;
+background-color: #2c3e50;
+box-shadow: 4px 0px 20px rgba(0,0,0,0.5);
+transition: left 0.8s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.6s ease, visibility 0.6s ease ;
+opacity: 0;
+visibility: hidden;
+z-index: 999;
+display: flex;
+flex-direction: column;
+padding: 85px 20px 30px 20px;
+box-sizing: border-box;
+}
+.sidebar.active{
+left: 0;
+opacity: 1;
+visibility: visible;
+}
+           .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            }
+
+        .sidebar-menu li {
+            margin-bottom: 15px;
+        }
+        .sidebar-card {
+            display: block;
+            padding: 14px 16px;
+            color: #bdc3c7;
+            text-decoration: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            border-radius: 10px;
+            background-color: #283747;
+            box-shadow: inset 0px 2px 4px rgba(0,0,0,0.4), 0px 1px 0px rgba(255,255,255,0.1);
+            transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+            cursor: pointer;
+            overflow: hidden;
+        }
+        .card-title {
+            font-weight: 600;
+            font-size: 1.05rem;
+            color: #ecf0f1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-title::after {
+            content: '▾';
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            transition: transform 0.3s ease, color 0.3s ease;
+        }
+        .card-detail {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            font-size: 0.88rem;
+            color: #abb2b9;
+            font-weight: 400;
+            margin-top: 0;
+            line-height: 1.4;
+            transition: max-height 0.4s ease, opacity 0.3s ease, margin-top 0.3s ease;
+        }
+        
+        .sidebar-card:hover .card-title::after {
+            transform: rotate(180deg);
+            color: #3498db;
+        }
+        .sidebar-card:hover .card-detail {
+            max-height: 150px; 
+            opacity: 1;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .sidebar-menu a {
+            display: block;
+            padding: 12px 15px;
+            color: #bdc3c7;
+            text-decoration: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: 600;
+            border-radius: 8px;
+            background-color: #283747;
+            box-shadow: inset 0px 2px 4px rgba(0,0,0,0.4), 0px 1px 0px rgba(255,255,255,0.1);
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-menu a:hover {
+            background-color: #212f3d;
+            color: #ffffff;
+            transform: translateX(4px);
+        }
+        .menu-btn {
+            position: fixed;
+            z-index: 1000;
+            width: 46px;
+            height: 46px;
+            background-color: #283747;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0px 2px 4px rgba(0,0,0,0.6), 0px 1px 0px rgba(255,255,255,0.15);
+            transition: opacity 0.6s ease, background-color 0.2s ease;
+            opacity: 1;
+            top: 12px;
+            left: 20px;
+            overflow: hidden;
+        }
+        .menu-btn img {
+           width: 50px;
+            height: 50px;
+            filter: invert(1);
+            mix-blend-mode: screen; 
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+       
+        
+        .menu-btn.fading {
+            opacity: 0;
+            transition: opacity 0.1s ease !important;
+            pointer-events: none;
+        }
+
+        .menu-btn.active img {
+            transform: rotate(360deg);
+        }
+        .top-navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            background-color: #2c3e50;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            z-index: 997; 
+        }
+        #backBtnWrap {
+    display: none;
+    width: 80%;
+    max-width: 900px;
+    margin: 0 auto 60px auto;
+    padding-right: 60px;       
+    box-sizing: border-box;
+    justify-content: flex-end; 
+}
+        .back-btn { 
+            width: 220px;
+            padding: 12px 20px;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            text-align: center;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 
+                inset 0px 2px 4px rgba(255,255,255,0.2),
+                inset 0px -2px 4px rgba(0,0,0,0.4),
+                0 6px 15px rgba(0,0,0,0.2);
+            text-shadow: 0 -1px 0 rgba(0,0,0,0.6);
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background-color: #212f3d;
+            transform: translateY(-2px);
+            box-shadow: 
+                inset 0px 2px 4px rgba(255,255,255,0.3),
+                inset 0px -2px 4px rgba(0,0,0,0.5),
+                0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .back-btn:active {
+            transform: translateY(1px);
+            box-shadow: 
+                inset 0px 2px 5px rgba(0,0,0,0.5);
+        }
+        #heroSection {
+            transition: opacity 0.8s ease, transform 0.8s ease, max-height 0.8s ease;
+            opacity: 1;
+            transform: translateY(0);
+            max-height: 600px;
+            overflow: hidden;
+        }
+       #heroSection.fade-out {
+            opacity: 0;
+            transform: translateY(-40px);
+            max-height: 0;
+            pointer-events: none;
+            margin: 0;
+            padding: 0;
+        }
+
+
+
+
+
+      .title-container {
+
+        position: relative; 
+            text-align: center;
+            margin-top: 200px;
+            font-family: 'Franklin Gothic Medium', sans-serif;
+            font-size: 6rem;
+            color: #d0d0d0; 
+            letter-spacing: 2px;
+            text-shadow: 
+                0 -1px 0 rgba(0,0,0,0.8),
+                0 -2px 1px rgba(0,0,0,0.5),
+                0 -3px 2px rgba(0,0,0,0.3),
+                0 1px 0 rgba(255,255,255,1),
+                0 2px 1px rgba(255,255,255,0.6);
+        }
+        .letter-w {
+            position: relative;
+            display: inline-block;
+        }
+       .title-leaf-svg {
+            position: absolute;
+            top: -42px;
+            left: 90%;
+            transform: translateX(-50%);
+            width: 75px;
+            height: 75px;
+            fill: #cccccc; 
+            
+            filter: drop-shadow(0 -1px 0 rgba(0,0,0,0.8)) 
+                    drop-shadow(0 -2px 1px rgba(0,0,0,0.5))
+                    drop-shadow(0 1px 0 rgba(255,255,255,1));
+            pointer-events: none; 
+            z-index: 2;
+            transform-origin: bottom center;
+            
+        }
+        .title-leaf-svg.wind-active {
+            animation: windBlow 1.2s ease-in-out;
+        }
+
+        @keyframes windBlow {
+        0% {
+            transform: translateX(-50%) rotate(0deg);
+        }
+        40% {
+            transform: translateX(-50%) rotate(15deg);
+        }
+        75%{
+            transform: translateX(-50%) rotate(-4deg);
+        }
+        100%{
+            transform: translateX(-50%) rotate(0deg);
+        }
+}
+
+#resultsSection {
+    display: none; 
+    width: 80%;
+    max-width: 900px;
+    margin: 50px auto;
+    background: #ededed;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: inset 3px 3px 6px rgba(0,0,0,0.12),
+        inset -3px -3px 6px rgba(255,255,255,0.8),
+        0 10px 30px rgba(0,0,0,0.08);
+        
+    
+    
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: 
+        "media info" 
+        "media btn";
+    
+    gap: 20px 40px;
+    align-items: center;
+     opacity: 0;
+    transform: translateY(60px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+#resultsSection.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+        .results-centered {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            margin-top: 140px !important; 
+            margin-bottom: 30px !important;
+        }
+        .result-media-box {
+            grid-area: media;
+            text-align: center;
+            background: #e2e8f0;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 
+                inset 2px 2px 5px rgba(0,0,0,0.15),
+                inset -2px -2px 5px rgba(255,255,255,0.9);
+        }
+        .result-media-box img, .result-media-box video {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            object-fit: contain;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .result-info-box {
+            grid-area: info;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .press-text {
+            color: #555555;
+            text-shadow: 
+                0 -1px 0 rgba(0,0,0,0.4),
+                0 1px 0 rgba(255,255,255,0.9);
+        }
+        .press-heading {
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-shadow: 
+                0 -1px 0 rgba(0,0,0,0.4),
+                0 1px 0 rgba(255,255,255,0.9);
+        }
+        .press-result {
+            font-size: 1.4rem; 
+            font-weight: bold; 
+            color: #c0392b; 
+            margin: 0;
+            text-shadow: 
+                0 -1px 0 rgba(0,0,0,0.3),
+                0 1px 0 rgba(255,255,255,0.9);
+        }
+        .status-loading {
+            font-size: 1.3rem;
+            color: #e67e22;
+            font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+        .status-success {
+            font-size: 1.5rem;
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .confidence-badge {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #e2e8f0;
+            color: #16a085;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-shadow: 
+                inset 2px 2px 4px rgba(0,0,0,0.1),
+                inset -2px -2px 4px rgba(255,255,255,0.8);
+            text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+        
+
+    </style>
+</head>
+<!--ARKA PLAN RENGİ VE STİLİ-->
+<body style="background-color: #f5f5f5; margin: 0; padding: 0; ">
+    <!--SİDEBAR İÇERİĞİ-->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div> 
+<div class="sidebar" id="sidebar">
+   <ul class="sidebar-menu">
+            <li>
+                <div class="sidebar-card">
+                    <div class="card-title">Model Bilgisi</div>
+                    <div class="card-detail">
+                        EfficientNet-B3 mimarisi kullanılarak eğitilmiş özel derin öğrenme sınıflandırma modeli.
+                    </div>
+                </div>
+            </li>
+            <li>
+                <div class="sidebar-card">
+                    <div class="card-title">Cihaz</div>
+                    <div class="card-detail">
+                        CUDA / GPU ivmelendirmesi aktif (NVIDIA GeForce RTX).
+                    </div>
+                </div>
+            </li>
+            <li>
+                <div class="sidebar-card">
+                    <div class="card-title">Model Boyutu</div>
+                    <div class="card-detail">
+                        Yaklaşık 48.5 MB (.pth parametre ağırlık dosyası).
+                    </div>
+                </div>
+            </li>
+            <li>
+                <div class="sidebar-card">
+                    <div class="card-title">Giriş Boyutu</div>
+                    <div class="card-detail">
+                        300x300 piksel RGB çözünürlük standart girdi boyutu.
+                    </div>
+                </div>
+            </li>
+            <li>
+                <div class="sidebar-card">
+                    <div class="card-title">Sınıf Sayısı</div>
+                    <div class="card-detail">
+                        9 farklı yabani ot (weed) türü sınıflandırma kapasitesi.
+                    </div>
+                </div>
+            </li>
+        </ul>
+</div>
+<!--ÜSTTEKİ LACİVERT YATAY ŞERİT-->
+<div class="top-navbar"></div>
+<!--SİDEBAR BUTONU-->
+    <button id="menuBtn" class="menu-btn" onclick="toggleSidebar()" 
+     onmouseover="this.style.backgroundColor= '#212f3d'" onmouseout="this.style.backgroundColor= '#283747'" >
+      <img src="leaf.jpeg" alt="Menü">
+      </button>
+
+<!--ORTADAKİ BÜYÜK BAŞLIK-->
+<div id="heroSection">
+<div class="title-container">
+    DEEP<span class="letter-w"><svg id="leafSvg" class="title-leaf-svg" viewBox="0 0 100 100">
+    
+            <path d="M50,85 C50,85 58,60 78,45 C88,37.5 95,20 90,5 C70,10 55,25 50,40 C45,20 30,10 10,15 C5,30 15,50 35,55 C45,57.5 48,70 50,85 Z" />
+            <path d="M48,42 C38,30 25,28 15,32 C20,45 32,50 44,46 Z" opacity="0.15" fill="#000" />
+            <path d="M54,38 C68,26 80,18 86,10 C82,24 72,36 56,41 Z" opacity="0.15" fill="#000" />
+        </svg>W</span>EEDS
+</div>
+ 
+ <h3 style="text-align: center; margin-top: 10px; font-family: 'Franklin Gothic Medium'; color: #cccccc;">EFFICIENTNET-B3 (sqrt weighted loss) - exp-effb3-sqrt</h3>
+<!--GÖRSEL YÜKLEYEN KUTU-->
+ <div style=" display: flex; justify-content: center; gap: 40px; margin-bottom: 50px;">
+ <label style="
+ width: 220px;
+ height: 200px;
+ border: 2px dashed #b0b0b0;
+ border-radius: 15px;
+ background-color: #ededed;
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ justify-content: center;
+ cursor: pointer;
+ box-shadow: inset 2px 2px 5px rgba(0,0,0,0.1);
+ transition: all 0.3s ease;">
+<input type="file" accept="image/*" style="display: none; " onchange="handleFileUpload(event, 'image')">
+<span style="font-size: 3.5rem; color: #7f8c8d; line-height: 1;">+</span>
+<span style="font-size: 1rem; color: #7f8c8d; margin-top: 10px; font-weight: bold;">Görsel Yükle</span> 
+</label>
+<!--VİDEO YÜKLEYEN KUTU-->
+ <label style="
+ width: 220px;
+ height: 200px;
+ border: 2px dashed #b0b0b0;
+ border-radius: 15px;
+ background-color: #ededed;
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ justify-content: center;
+ cursor: pointer;
+ box-shadow: inset 2px 2px 5px rgba(0,0,0,0.1);
+ transition: all 0.3s ease;">
+<input type="file" accept="video/*" style="display: none;" onchange="handleFileUpload(event, 'video')">
+<span style="font-size: 3.5rem; color: #7f8c8d; line-height: 1;">+</span>
+<span style="font-size: 1rem; color: #7f8c8d; margin-top: 10px; font-weight: bold;">Video Yükle</span> 
+
+
+</label>
+</div>
+</div>
+   <div id="resultsSection">
+        <div class="result-media-box" id="mediaPreviewContainer"></div>
+        <div class="result-info-box">
+            <div id="modelStatus" class="status-loading">Model çalışıyor...</div>
+            <div id="modelResultContainer" style="display: none;">
+                <h2 class="press-heading">Tahmin Edilen Tür:</h2>
+                <p id="weedName" class="press-result"></p>
+                <div class="confidence-badge" id="confidenceBadge">Doğruluk: %0</div>
+           
+            </div>
+        </div>
+        </div>
+        <div id="backBtnWrap">
+         <button class="back-btn" onclick="resetToHome()">Ana Ekrana Dön</button>
+    </div>
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const menuBtn = document.getElementById('menuBtn');
+        
+        const willOpen = !sidebar.classList.contains('active');
+
+        menuBtn.classList.add('fading');
+
+        
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+        menuBtn.classList.toggle('active');
+
+        if (willOpen) {
+            setTimeout(() => {
+                menuBtn.classList.remove('fading');
+            }, 950);
+        } else {
+            
+            setTimeout(() => {
+                menuBtn.classList.remove('fading');
+            }, 100);
+        }
+       
+    }
+    function handleFileUpload(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const resultsSection = document.getElementById('resultsSection');
+            const mediaContainer = document.getElementById('mediaPreviewContainer');
+            const modelStatus = document.getElementById('modelStatus');
+            const resultContainer = document.getElementById('modelResultContainer');
+            const heroSection = document.getElementById('heroSection');
+heroSection.classList.add('fade-out');
+
+
+setTimeout(() => {
+    resultsSection.style.display = 'flex';
+    resultsSection.classList.add('results-centered');
+    void resultsSection.offsetWidth;          
+    resultsSection.classList.add('show');
+}, 900);
+            
+            mediaContainer.innerHTML = '';
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (type === 'image') {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    mediaContainer.appendChild(img);
+                } else {
+                    const video = document.createElement('video');
+                    video.src = e.target.result;
+                    video.controls = true;
+                    mediaContainer.appendChild(video);
+                }
+            }
+            reader.readAsDataURL(file);
+
+            
+            modelStatus.style.display = 'block';
+            modelStatus.innerHTML = "Model çalışıyor, analiz ediliyor...";
+            resultContainer.style.display = 'none';
+
+            //2.5 saniye sonra sahte model sonucunu göster (Simülasyon)
+            setTimeout(() => {
+                modelStatus.style.display = 'none';
+                resultContainer.style.display = 'block';
+                 document.getElementById('backBtnWrap').style.display = 'flex';
+                
+                // Örnek sahte sonuçlar
+                const simulatedWeeds = [
+                    { name: "Karahindiba (Taraxacum officinale)", confidence: "97.4%" },
+                    { name: "Yabani Hardal (Sinapis arvensis)", confidence: "94.2%" },
+                    { name: "Pıtrak (Xanthium strumarium)", confidence: "98.9%" }
+                ];
+                const randomChoice = simulatedWeeds[Math.floor(Math.random() * simulatedWeeds.length)];
+
+                document.getElementById('weedName').innerText = randomChoice.name;
+                document.getElementById('confidenceBadge').innerText = "Doğruluk Oranı: " + randomChoice.confidence;
+            }, 2500);
+        }
+    function triggerRandomWind() {
+        const leaf = document.getElementById('leafSvg');
+        leaf.classList.add('wind-active');
+
+        setTimeout(() => {
+            leaf.classList.remove('wind-active');
+        },1200);
+        const randomDelay = Math.floor(Math.random() * (10000 - 1000 + 1)) + 1000;
+        setTimeout(triggerRandomWind, randomDelay);
+    }
+    setTimeout(triggerRandomWind, 2000);
+    // ANA EKRANA GERİ DÖNME FONKSİYONU
+        function resetToHome() {
+    const heroSection = document.getElementById('heroSection');
+    const resultsSection = document.getElementById('resultsSection');
+
+    document.getElementById('backBtnWrap').style.display = 'none';
+    resultsSection.classList.remove('show');
+
+    setTimeout(() => {
+        resultsSection.style.display = 'none';
+        resultsSection.classList.remove('results-centered');
+        heroSection.classList.remove('fade-out');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 800);
+}
+</script>
+        
+</body>
+</html>
